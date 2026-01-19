@@ -1,12 +1,18 @@
 import React from 'react';
 import './DashboardHeader.css';
+import SaniTapLogo from '../assets/SaniTapLogo.png'; // Import the logo
 
 export default function DashboardHeader() {
   return (
     <header className="dashboard-header">
       <div className="header-container">
         <div className="logo">
-          <h1>SaniTap</h1>
+          <img 
+            src={SaniTapLogo} 
+            alt="SaniTap" 
+            className="logo-image"
+          />
+          {/* Removed the <h1>SaniTap</h1> text */}
         </div>
         
         <nav className="header-nav">

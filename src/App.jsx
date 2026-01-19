@@ -1,35 +1,83 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
+import DashboardHeader from './Dashboard/DashboardHeader';
+import StatCard from './Dashboard/StatCard';
+import ProductsTable from './Dashboard/ProductsTable';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Sample data based on your screenshot
+  const stats = [
+    {
+      title: 'Total Products',
+      value: '4',
+      date: 'As of 12/23/2025'
+    },
+    {
+      title: 'Low Stock Items',
+      value: '3',
+      date: 'As of 12/23/2025'
+    },
+    {
+      title: 'Total Sales',
+      value: '₱ 755.00',
+      date: 'As of 12/23/2025'
+    }
+  ];
+
+  const products = [
+    {
+      name: 'Menstrual Pads',
+      price: '₱ 10.00',
+      sales: '27',
+      revenue: '₱ 10.00',
+      status: 'Low Stock'
+    },
+    {
+      name: 'Wet Wipes',
+      price: '₱ 10.00',
+      sales: '14',
+      revenue: '₱ 10.00',
+      status: 'Low Stock'
+    },
+    {
+      name: 'Tissue',
+      price: '₱ 10.00',
+      sales: '21',
+      revenue: '₱ 10.00',
+      status: 'Low Stock'
+    },
+    {
+      name: 'Soap',
+      price: '₱ 15.00',
+      sales: '09',
+      revenue: '₱ 10.00',
+      status: 'In Stock'
+    }
+  ];
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <DashboardHeader />
+      
+      <main className="main-content">
+        {/* Stats Section */}
+        <div className="stats-section">
+          {stats.map((stat, index) => (
+            <StatCard
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              date={stat.date}
+            />
+          ))}
+        </div>
+
+        {/* Products Section */}
+        <ProductsTable products={products} />
+        
+        {/* Footer navigation removed */}
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
