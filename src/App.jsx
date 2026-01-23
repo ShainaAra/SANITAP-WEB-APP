@@ -1,7 +1,9 @@
 import './App.css';
+import { Routes, Route } from 'react-router-dom';
 import DashboardHeader from './Dashboard/DashboardHeader';
 import StatCard from './Dashboard/StatCard';
 import ProductsTable from './Dashboard/ProductsTable';
+import List from './pages/List/List';
 
 function App() {
   // Sample data based on your screenshot
@@ -59,22 +61,30 @@ function App() {
       <DashboardHeader />
       
       <main className="main-content">
-        {/* Stats Section */}
-        <div className="stats-section">
-          {stats.map((stat, index) => (
-            <StatCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              date={stat.date}
-            />
-          ))}
-        </div>
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              <>
+                {/* Stats Section */}
+                <div className="stats-section">
+                  {stats.map((stat, index) => (
+                    <StatCard
+                      key={index}
+                      title={stat.title}
+                      value={stat.value}
+                      date={stat.date}
+                    />
+                  ))}
+                </div>
 
-        {/* Products Section */}
-        <ProductsTable products={products} />
-        
-        {/* Footer navigation removed */}
+                {/* Products Section */}
+                <ProductsTable products={products} />
+              </>
+            } 
+          />
+          <Route path="/list" element={<List />} />
+        </Routes>
       </main>
     </div>
   );
