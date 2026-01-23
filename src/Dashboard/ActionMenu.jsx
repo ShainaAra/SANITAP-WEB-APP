@@ -1,14 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ActionMenu.css';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 
 export default function ActionMenu({ productId, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,89 +20,121 @@ export default function ActionMenu({ productId, onEdit, onDelete }) {
   }, []);
 
   const handleEdit = () => {
+    console.log('Edit clicked for product:', productId);
     setShowEditDialog(true);
     setIsOpen(false);
   };
 
   const handleConfirmEdit = () => {
+    console.log('Confirm edit for product:', productId);
     onEdit(productId);
     setShowEditDialog(false);
   };
 
   const handleDelete = () => {
+    console.log('Delete clicked for product:', productId);
     setShowDeleteDialog(true);
     setIsOpen(false);
   };
 
   const handleConfirmDelete = () => {
+    console.log('Confirm delete for product:', productId);
     onDelete(productId);
     setShowDeleteDialog(false);
   };
 
   return (
-    <div className="action-menu-container" ref={menuRef}>
-      <button 
-        className="action-button" 
-        onClick={() => setIsOpen(!isOpen)}
-        title="More options"
-      >
-        ⋯
-      </button>
-      
-      {isOpen && (
-        <div className="action-dropdown">
-          <button className="action-option edit" onClick={handleEdit}>
-            Edit
-          </button>
-          <button className="action-option delete" onClick={handleDelete}>
-            Delete
-          </button>
+    <>
+      <div className="action-menu-container" ref={menuRef}>
+        <button 
+          className="action-button" 
+          onClick={() => setIsOpen(!isOpen)}
+          title="More options"
+        >
+          ⋯
+        </button>
+        
+        {isOpen && (
+          <div className="action-dropdown">
+            <button className="action-option edit" onClick={handleEdit}>
+              ✏️ Edit
+            </button>
+            <button className="action-option delete" onClick={handleDelete}>
+              🗑️ Delete
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Edit Dialog */}
+      {showEditDialog && (
+        <div className="modal-overlay" onClick={() => setShowEditDialog(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Product</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowEditDialog(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Product ID: {productId}</p>
+              <p>Edit your product details here...</p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={handleConfirmEdit}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
-              Make changes to the product details below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="edit-form">
-            {/* Add your edit form fields here */}
-            <p>Product ID: {productId}</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmEdit}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this product? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      {showDeleteDialog && (
+        <div className="modal-overlay" onClick={() => setShowDeleteDialog(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Delete Product</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this product?</p>
+              <p>This action cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

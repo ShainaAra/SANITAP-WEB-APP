@@ -30,7 +30,7 @@ export default function ProductsTable({ products }) {
               <th>Sales</th>
               <th>Revenue</th>
               <th>Status</th>
-              <th className="action-header">Action</th> {/* Added class */}
+              <th className="action-header">Action</th>
             </tr>
           </thead>
           <tbody>
