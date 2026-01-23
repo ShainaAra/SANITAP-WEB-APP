@@ -45,7 +45,7 @@ export default function ProductsTable({ products }) {
                     {product.status}
                   </span>
                 </td>
-                <td>
+                <td className="action-cell">
                   <ActionMenu 
                     productId={index}
                     product={product}

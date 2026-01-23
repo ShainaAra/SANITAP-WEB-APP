@@ -1,95 +1,129 @@
 .products-section {
-  background: white;
-  border-radius: 10px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #333;
-  margin: 0 0 1.5rem 0;
+  color: #111827;
+  margin-bottom: 20px;
 }
 
 .table-wrapper {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
   overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
 }
 
 .products-table {
   width: 100%;
   border-collapse: collapse;
+  position: relative;
+  table-layout: fixed;
 }
 
-.products-table thead tr {
-  border-bottom: 1px solid #e0e0e0;
+.products-table thead {
+  background-color: #f3f4f6;
 }
 
 .products-table th {
+  padding: 16px;
   text-align: left;
-  padding: 1rem;
   font-weight: 600;
-  color: #666;
-  font-size: 0.85rem;
-  text-transform: capitalize;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .products-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  color: #333;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
   font-size: 0.95rem;
+  position: relative;
+  overflow: visible;
 }
 
 .products-table tbody tr:hover {
-  background-color: #fafafa;
+  background-color: #f9fafb;
+}
+
+.products-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Action cell specific styling */
+.action-cell {
+  position: relative;
+  overflow: visible !important;
+  z-index: 10;
+}
+
+.action-header {
+  text-align: center;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 0.45rem 0.9rem;
-  border-radius: 18px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 500;
-}
-
-.status-badge.low-stock {
-  background-color: #ffc107;
-  color: #333;
+  text-align: center;
+  min-width: 80px;
 }
 
 .status-badge.in-stock {
-  background-color: #4caf50;
-  color: white;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
-.action-button {
-  background: none;
-  border: none;
-  color: #999;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.3s;
+.status-badge.low-stock {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
-.action-button:hover {
-  color: #333;
+.status-badge.out-of-stock {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
+/* Ensure table rows don't clip content */
+.products-table tr {
+  position: relative;
+  overflow: visible;
+}
+
+/* Make sure the action menu dropdown appears above everything */
+.action-menu-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
   .products-section {
-    padding: 1.5rem;
+    padding: 16px;
   }
-
+  
   .products-table th,
   .products-table td {
-    padding: 0.75rem 0.5rem;
+    padding: 12px 8px;
     font-size: 0.875rem;
   }
-
+  
   .status-badge {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    padding: 4px 8px;
   }
 }
