@@ -30,7 +30,7 @@ export default function ProductsTable({ products }) {
               <th>Sales</th>
               <th>Revenue</th>
               <th>Status</th>
-              <th>Action</th>
+              <th className="action-header">Action</th> {/* Added class */}
             </tr>
           </thead>
           <tbody>
@@ -46,11 +46,7 @@ export default function ProductsTable({ products }) {
                   </span>
                 </td>
                 <td>
-                  <ActionMenu 
-                    productId={index}
-                    onEdit={handleEditProduct}
-                    onDelete={handleDeleteProduct}
-                  />
+                  <button className="action-button">⋯</button>
                 </td>
               </tr>
             ))}
