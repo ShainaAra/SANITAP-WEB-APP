@@ -1,0 +1,48 @@
+.list-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.list-table thead tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.list-table thead th {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+  color: #666;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.list-table tbody tr:hover {
+  background-color: #fafafa;
+}
+
+.list-table tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.list-table td.payment {
+  font-weight: 600;
+  color: #0c4b05;
+}
+
+.list-table td.no-data {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+}

@@ -72,10 +72,10 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
         {isOpen && (
           <div className="action-dropdown">
             <button className="action-option edit" onClick={handleEdit}>
-              ✏️ Edit
+              Edit
             </button>
             <button className="action-option delete" onClick={handleDelete}>
-              🗑️ Delete
+              Delete
             </button>
           </div>
         )}
@@ -144,7 +144,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
                   <input 
                     type="text"
                     className="form-input read-only"
-                    value={`₱ ${product?.revenue || '0.00'}`}
+                    value={`${product?.revenue || '0.00'}`}
                     readOnly
                   />
                 </div>
