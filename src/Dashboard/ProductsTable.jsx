@@ -46,7 +46,11 @@ export default function ProductsTable({ products }) {
                   </span>
                 </td>
                 <td>
-                  <button className="action-button">⋯</button>
+                  <ActionMenu 
+                    productId={index}
+                    onEdit={handleEditProduct}
+                    onDelete={handleDeleteProduct}
+                  />
                 </td>
               </tr>
             ))}
