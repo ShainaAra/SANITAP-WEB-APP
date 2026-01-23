@@ -88,7 +88,7 @@ export default function List() {
     {
       rfidNumber: '012',
       studentNumber: '25-345678',
-      studentName: 'Marites Dancel',
+      studentName: 'Jenella Yvonne Cañete',
       course: 'BSIT',
       totalPayment: '₱ 56.00'
     },
