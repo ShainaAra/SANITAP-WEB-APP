@@ -60,15 +60,27 @@
   border-bottom: none;
 }
 
-/* Action cell specific styling */
+/* Action column specific styling */
+.action-header {
+  text-align: center;
+  width: 100px; /* Fixed width for Action column */
+}
+
 .action-cell {
   position: relative;
   overflow: visible !important;
   z-index: 10;
+  text-align: center; /* Center the action menu horizontally */
+  width: 100px; /* Match the header width */
 }
 
-.action-header {
-  text-align: center;
+.action-menu-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .status-badge {
@@ -102,14 +114,6 @@
   overflow: visible;
 }
 
-/* Make sure the action menu dropdown appears above everything */
-.action-menu-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
 /* Responsive design */
 @media (max-width: 768px) {
   .products-section {
@@ -125,5 +129,17 @@
   .status-badge {
     font-size: 0.7rem;
     padding: 4px 8px;
+  }
+  
+  .action-header,
+  .action-cell {
+    width: 80px; /* Smaller width on mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .action-header,
+  .action-cell {
+    width: 70px; /* Even smaller for very small screens */
   }
 }
