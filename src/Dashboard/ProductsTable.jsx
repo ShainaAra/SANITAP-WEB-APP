@@ -7,8 +7,8 @@ export default function ProductsTable({ products }) {
     return status.toLowerCase().replace(/\s+/g, '-');
   };
 
-  const handleEditProduct = (productId) => {
-    console.log('Edit product:', productId);
+  const handleEditProduct = (productId, formData) => {
+    console.log('Edit product:', productId, formData);
     // Add your edit logic here
   };
 
@@ -48,6 +48,7 @@ export default function ProductsTable({ products }) {
                 <td>
                   <ActionMenu 
                     productId={index}
+                    product={product}
                     onEdit={handleEditProduct}
                     onDelete={handleDeleteProduct}
                   />
