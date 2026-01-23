@@ -90,6 +90,9 @@
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
+  overflow-x: visible;
+  position: relative;
+  z-index: 1001;
 }
 
 .modal-header {
@@ -176,4 +179,110 @@
 
 .btn-danger:hover {
   background-color: #b71c1c;
+}
+
+/* Form Styles */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-input.read-only {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.form-input.read-only:focus {
+  border-color: #ddd;
+  box-shadow: none;
+}
+
+/* Select Trigger Custom Styling */
+.select-trigger-custom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  background-color: white !important;
+  cursor: pointer !important;
+  font-size: 0.95rem !important;
+  color: #333 !important;
+}
+
+.select-trigger-custom:hover {
+  border-color: #999 !important;
+}
+
+.select-trigger-custom:focus {
+  outline: none !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Select content positioned above modal */
+[data-state="open"][role="listbox"] {
+  z-index: 2000 !important;
+}
+
+/* Ensure select portal renders above modal */
+.radix-select-content {
+  z-index: 2000 !important;
+}
+
+/* Style select dropdown items */
+[role="option"] {
+  padding: 10px 16px !important;
+  cursor: pointer !important;
+  font-size: 0.95rem !important;
+  color: #333 !important;
+}
+
+[role="option"]:hover {
+  background-color: #f5f5f5 !important;
+}
+
+[role="option"][aria-selected="true"] {
+  background-color: #e3f2fd !important;
+  color: #007bff !important;
+  font-weight: 500 !important;
+}
+
+/* Style select content container */
+[role="listbox"] {
+  background-color: white !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  min-width: 200px !important;
 }
