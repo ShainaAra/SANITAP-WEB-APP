@@ -68,7 +68,7 @@
   background-color: #e0e0e0;
 }
 
-/* Modal Overlay */
+/* Modal Overlay - Increased z-index */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -79,7 +79,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000; /* Increased to be above AlertDialog */
 }
 
 .modal-content {
@@ -92,7 +92,7 @@
   overflow-y: auto;
   overflow-x: visible;
   position: relative;
-  z-index: 1001;
+  z-index: 2001; /* Increased to be above AlertDialog */
 }
 
 .modal-header {
@@ -224,6 +224,59 @@
 .form-input.read-only:focus {
   border-color: #ddd;
   box-shadow: none;
+}
+
+/* Alert Dialog Styles - Custom implementation */
+.alert-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent; /* No overlay to allow interaction with modal */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000; /* Higher than modal */
+}
+
+.alert-dialog-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 90%;
+  padding: 24px;
+  border: 1px solid #e5e5e5;
+  animation: alertDialogSlideIn 0.2s ease-out;
+}
+
+@keyframes alertDialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert-dialog-header {
+  margin-bottom: 20px;
+}
+
+.alert-dialog-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.alert-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Select Trigger Custom Styling */

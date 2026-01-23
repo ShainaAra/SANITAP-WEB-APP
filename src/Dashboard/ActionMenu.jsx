@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ActionMenu.css';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 export default function ActionMenu({ productId, onEdit, onDelete, product }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
   const [formData, setFormData] = useState({
-    name: product?.name || '',
-    price: product?.price || '',
+    name: '',
+    price: null,
   });
   const menuRef = useRef(null);
 
@@ -33,8 +37,8 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
   const handleEdit = () => {
     console.log('Edit clicked for product:', productId);
     setFormData({
-      name: product?.name || '',
-      price: product?.price || '',
+      name: '',
+      price: null,
     });
     setShowEditDialog(true);
     setIsOpen(false);
@@ -42,8 +46,14 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
 
   const handleConfirmEdit = () => {
     console.log('Confirm edit for product:', productId, formData);
-    onEdit(productId, formData);
-    setShowEditDialog(false);
+    // Only edit if fields are not empty
+    if (formData.name.trim() && formData.price !== null && formData.price !== '') {
+      onEdit(productId, formData);
+      setShowEditDialog(false);
+    } else {
+      // Show shadcn AlertDialog for validation error
+      setShowValidationAlert(true);
+    }
   };
 
   const handleDelete = () => {
@@ -56,6 +66,14 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
     console.log('Confirm delete for product:', productId);
     onDelete(productId);
     setShowDeleteDialog(false);
+  };
+
+  const handlePriceChange = (e) => {
+    const value = e.target.value;
+    setFormData({
+      ...formData,
+      price: value === '' ? null : value
+    });
   };
 
   return (
@@ -72,10 +90,10 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
         {isOpen && (
           <div className="action-dropdown">
             <button className="action-option edit" onClick={handleEdit}>
-              ✏️ Edit
+              Edit
             </button>
             <button className="action-option delete" onClick={handleDelete}>
-              🗑️ Delete
+              Delete
             </button>
           </div>
         )}
@@ -95,24 +113,17 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
               </button>
             </div>
             <div className="modal-body">
-              <form className="edit-form">
-                {/* Product Name - Select */}
+              <form className="edit-form" onSubmit={(e) => e.preventDefault()}>
+                {/* Product Name - Input field */}
                 <div className="form-group">
                   <label className="form-label">Product Name</label>
-                  <Select 
-                    value={formData.name} 
-                    onValueChange={(value) => setFormData({...formData, name: value})}
-                  >
-                    <SelectTrigger className="form-input select-trigger-custom">
-                      <SelectValue placeholder="Select a Product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="menstrual pads">Menstrual Pads</SelectItem>
-                      <SelectItem value="tissue">Tissue</SelectItem>
-                      <SelectItem value="soap">Soap</SelectItem>
-                      <SelectItem value="wet wipes">Wet Wipes</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter a product name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
                 </div>
 
                 {/* Price */}
@@ -121,9 +132,9 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
                   <input 
                     type="number"
                     className="form-input"
-                    placeholder="Enter Price"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    placeholder="Enter price"
+                    value={formData.price === null ? '' : formData.price}
+                    onChange={handlePriceChange}
                   />
                 </div>
 
@@ -144,7 +155,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
                   <input 
                     type="text"
                     className="form-input read-only"
-                    value={`₱ ${product?.revenue || '0.00'}`}
+                    value={`${product?.revenue || '0.00'}`}
                     readOnly
                   />
                 </div>
@@ -208,6 +219,25 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
                 onClick={handleConfirmDelete}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Validation Alert Dialog - Custom implementation without overlay */}
+      {showValidationAlert && (
+        <div className="alert-dialog-overlay" onClick={() => setShowValidationAlert(false)}>
+          <div className="alert-dialog-content" onClick={(e) => e.stopPropagation()}>
+            <div className="alert-dialog-header">
+              <h3 className="alert-dialog-title">Please fill in all fields</h3>
+            </div>
+            <div className="alert-dialog-footer">
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowValidationAlert(false)}
+              >
+                OK
               </button>
             </div>
           </div>
