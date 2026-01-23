@@ -1,14 +1,25 @@
 import React from 'react';
 import './ProductsTable.css';
+import ActionMenu from './ActionMenu';
 
 export default function ProductsTable({ products }) {
   const getStatusClass = (status) => {
     return status.toLowerCase().replace(/\s+/g, '-');
   };
 
+  const handleEditProduct = (productId) => {
+    console.log('Edit product:', productId);
+    // Add your edit logic here
+  };
+
+  const handleDeleteProduct = (productId) => {
+    console.log('Delete product:', productId);
+    // Add your delete logic here
+  };
+
   return (
     <div className="products-section">
-      <h2 className="section-title">Products</h2>
+      <h2 className="section-title">Hygiene Products</h2>
       
       <div className="table-wrapper">
         <table className="products-table">
@@ -35,7 +46,11 @@ export default function ProductsTable({ products }) {
                   </span>
                 </td>
                 <td>
-                  <button className="action-button">⋯</button>
+                  <ActionMenu 
+                    productId={index}
+                    onEdit={handleEditProduct}
+                    onDelete={handleDeleteProduct}
+                  />
                 </td>
               </tr>
             ))}
