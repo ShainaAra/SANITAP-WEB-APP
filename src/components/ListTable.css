@@ -19,8 +19,8 @@
 .list-table thead th {
   text-align: left;
   padding: 1rem;
-  font-weight: 600;
-  color: #666;
+  font-weight: 700;
+  color: #0c4b05;
   font-size: 0.85rem;
   text-transform: capitalize;
 }

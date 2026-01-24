@@ -1,28 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ActionMenu.css';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 
 export default function ActionMenu({ productId, onEdit, onDelete, product }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [formData, setFormData] = useState({
     name: '',
     price: null,
   });
   const menuRef = useRef(null);
+  const buttonRef = useRef(null);
 
-  // Close menu when clicking outside
+  // Position dropdown properly
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -33,6 +25,33 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Calculate dropdown position
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Check if there's enough space below the button
+      const spaceBelow = viewportHeight - buttonRect.bottom;
+      const dropdownHeight = 88; // Approximate height of dropdown (2 buttons * 44px each)
+      
+      let top, left;
+      
+      if (spaceBelow > dropdownHeight) {
+        // Position below the button
+        top = buttonRect.bottom + window.scrollY;
+      } else {
+        // Position above the button
+        top = buttonRect.top + window.scrollY - dropdownHeight;
+      }
+      
+      // Position to the right of the button
+      left = buttonRect.right + window.scrollX - 150; // Subtract dropdown width
+      
+      setDropdownPosition({ top, left });
+    }
+  }, [isOpen]);
 
   const handleEdit = () => {
     console.log('Edit clicked for product:', productId);
@@ -58,7 +77,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
       onEdit(productId, updatedProduct);
       setShowEditDialog(false);
     } else {
-      // Show shadcn AlertDialog for validation error
+      // Show validation error
       setShowValidationAlert(true);
     }
   };
@@ -83,19 +102,31 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
     });
   };
 
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
   return (
     <>
       <div className="action-menu-container" ref={menuRef}>
         <button 
+          ref={buttonRef}
           className="action-button" 
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={toggleMenu}
           title="More options"
         >
           ⋯
         </button>
         
         {isOpen && (
-          <div className="action-dropdown">
+          <div 
+            className="action-dropdown"
+            style={{
+              position: 'absolute',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`
+            }}
+          >
             <button className="action-option edit" onClick={handleEdit}>
               Edit
             </button>
@@ -232,7 +263,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
         </div>
       )}
 
-      {/* Validation Alert Dialog - Custom implementation without overlay */}
+      {/* Validation Alert Dialog */}
       {showValidationAlert && (
         <div className="alert-dialog-overlay" onClick={() => setShowValidationAlert(false)}>
           <div className="alert-dialog-content" onClick={(e) => e.stopPropagation()}>

@@ -35,7 +35,7 @@ export default function ProductsTable({ products, onDelete, onEdit }) {
                     {product.status}
                   </span>
                 </td>
-                <td>
+                <td className="action-cell">
                   <ActionMenu 
                     productId={product.id}
                     product={product}
