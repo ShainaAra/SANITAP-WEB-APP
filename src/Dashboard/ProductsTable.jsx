@@ -2,19 +2,9 @@ import React from 'react';
 import './ProductsTable.css';
 import ActionMenu from './ActionMenu';
 
-export default function ProductsTable({ products }) {
+export default function ProductsTable({ products, onDelete, onEdit }) {
   const getStatusClass = (status) => {
     return status.toLowerCase().replace(/\s+/g, '-');
-  };
-
-  const handleEditProduct = (productId, formData) => {
-    console.log('Edit product:', productId, formData);
-    // Add your edit logic here
-  };
-
-  const handleDeleteProduct = (productId) => {
-    console.log('Delete product:', productId);
-    // Add your delete logic here
   };
 
   return (
@@ -34,8 +24,8 @@ export default function ProductsTable({ products }) {
             </tr>
           </thead>
           <tbody>
-            {products.map((product, index) => (
-              <tr key={index}>
+            {products.map((product) => (
+              <tr key={product.id}>
                 <td>{product.name}</td>
                 <td>{product.price}</td>
                 <td>{product.sales}</td>
@@ -47,10 +37,10 @@ export default function ProductsTable({ products }) {
                 </td>
                 <td>
                   <ActionMenu 
-                    productId={index}
+                    productId={product.id}
                     product={product}
-                    onEdit={handleEditProduct}
-                    onDelete={handleDeleteProduct}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                   />
                 </td>
               </tr>

@@ -37,8 +37,8 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
   const handleEdit = () => {
     console.log('Edit clicked for product:', productId);
     setFormData({
-      name: '',
-      price: null,
+      name: product?.name || '',
+      price: product?.price || null,
     });
     setShowEditDialog(true);
     setIsOpen(false);
@@ -48,7 +48,14 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
     console.log('Confirm edit for product:', productId, formData);
     // Only edit if fields are not empty
     if (formData.name.trim() && formData.price !== null && formData.price !== '') {
-      onEdit(productId, formData);
+      const updatedProduct = {
+        name: formData.name,
+        price: formData.price,
+        sales: product?.sales || 0,
+        revenue: product?.revenue || 0,
+        status: product?.status || 'Active'
+      };
+      onEdit(productId, updatedProduct);
       setShowEditDialog(false);
     } else {
       // Show shadcn AlertDialog for validation error
