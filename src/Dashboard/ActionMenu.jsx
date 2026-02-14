@@ -1,63 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './ActionMenu.css';
 
-export default function ActionMenu({ productId, onEdit, onDelete, product }) {
+export default function ActionMenu({ productId, onEdit, product }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [formData, setFormData] = useState({
     name: '',
     price: null,
   });
-  const menuRef = useRef(null);
   const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-  // Position dropdown properly
+  // Update dropdown position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: buttonRect.bottom + 4,
+        left: buttonRect.left + buttonRect.width / 2
+      });
+    }
+  }, [isOpen]);
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      // Check if click is outside button and dropdown
+      if (
+        buttonRef.current && 
+        !buttonRef.current.contains(event.target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Calculate dropdown position
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      
-      // Check if there's enough space below the button
-      const spaceBelow = viewportHeight - buttonRect.bottom;
-      const dropdownHeight = 88; // Approximate height of dropdown (2 buttons * 44px each)
-      
-      let top, left;
-      
-      if (spaceBelow > dropdownHeight) {
-        // Position below the button
-        top = buttonRect.bottom + window.scrollY;
-      } else {
-        // Position above the button
-        top = buttonRect.top + window.scrollY - dropdownHeight;
-      }
-      
-      // Position to the right of the button
-      left = buttonRect.right + window.scrollX - 150; // Subtract dropdown width
-      
-      setDropdownPosition({ top, left });
+    // Only add listener when menu is open
+    if (isOpen) {
+      document.addEventListener('click', handleClickOutside);
     }
+    
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [isOpen]);
 
   const handleEdit = () => {
     console.log('Edit clicked for product:', productId);
     setFormData({
-      name: '',
-      price: null,
+      name: product?.name || '',
+      price: product?.price || null,
     });
     setShowEditDialog(true);
     setIsOpen(false);
@@ -75,17 +69,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
     }
   };
 
-  const handleDelete = () => {
-    console.log('Delete clicked for product:', productId);
-    setShowDeleteDialog(true);
-    setIsOpen(false);
-  };
 
-  const handleConfirmDelete = () => {
-    console.log('Confirm delete for product:', productId);
-    onDelete(productId);
-    setShowDeleteDialog(false);
-  };
 
   const handlePriceChange = (e) => {
     const value = e.target.value;
@@ -101,7 +85,7 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
 
   return (
     <>
-      <div className="action-menu-container" ref={menuRef}>
+      <div className="action-menu-container">
         <button 
           ref={buttonRef}
           className="action-button" 
@@ -110,25 +94,30 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
         >
           ⋯
         </button>
-        
-        {isOpen && (
-          <div 
-            className="action-dropdown"
-            style={{
-              position: 'absolute',
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`
-            }}
-          >
-            <button className="action-option edit" onClick={handleEdit}>
-              Edit
-            </button>
-            <button className="action-option delete" onClick={handleDelete}>
-              Delete
-            </button>
-          </div>
-        )}
       </div>
+
+      {isOpen && createPortal(
+        <div 
+          ref={dropdownRef}
+          className="action-dropdown"
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            transform: 'translateX(-50%)',
+            zIndex: 9999
+          }}
+        >
+          <button 
+            type="button" 
+            className="action-option edit" 
+            onClick={handleEdit}
+          >
+            Edit
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Edit Dialog */}
       {showEditDialog && (
@@ -215,41 +204,6 @@ export default function ActionMenu({ productId, onEdit, onDelete, product }) {
                 onClick={handleConfirmEdit}
               >
                 Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Dialog */}
-      {showDeleteDialog && (
-        <div className="modal-overlay" onClick={() => setShowDeleteDialog(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Delete Product</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete this product?</p>
-              <p>This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-danger"
-                onClick={handleConfirmDelete}
-              >
-                Delete
               </button>
             </div>
           </div>

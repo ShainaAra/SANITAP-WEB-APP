@@ -5,100 +5,121 @@ import ListTable from '../../components/ListTable';
 export default function List() {
   const [filterText, setFilterText] = useState('');
   const [courseFilter, setCourseFilter] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    rfidNumber: '',
+    idNumber: '',
+    name: '',
+    course: ''
+  });
 
   // Dummy data for students
   const students = [
     {
       rfidNumber: '001',
-      studentNumber: '22-020892',
-      studentName: 'Jamie Jodelle H. Malvar',
+      idNumber: '22-020892',
+      name: 'Jamie Jodelle H. Malvar',
       course: 'BSIT',
       totalPayment: '₱ 10.00'
     },
     {
       rfidNumber: '002',
-      studentNumber: '22-020842',
-      studentName: 'Adrian Nash U. Semana',
+      idNumber: '22-020842',
+      name: 'Adrian Nash U. Semana',
       course: 'BSIT',
       totalPayment: '₱ 100.00'
     },
     {
       rfidNumber: '003',
-      studentNumber: '22-020832',
-      studentName: 'Shaina Ara S. Queturas',
+      idNumber: '22-020832',
+      name: 'Shaina Ara S. Queturas',
       course: 'BSIT',
       totalPayment: '₱ 30.00'
     },
     {
       rfidNumber: '004',
-      studentNumber: '22-123456',
-      studentName: 'Kim Mingyu',
+      idNumber: '22-123456',
+      name: 'Kim Mingyu',
       course: 'BSCS',
       totalPayment: '₱ 40.00'
     },
     {
       rfidNumber: '005',
-      studentNumber: '22-234567',
-      studentName: 'Alex Balaan',
+      idNumber: '22-234567',
+      name: 'Alex Balaan',
       course: 'BSIT',
       totalPayment: '₱ 75.00'
     },
     {
       rfidNumber: '006',
-      studentNumber: '22-345678',
-      studentName: 'Alvin Magbanua',
+      idNumber: '22-345678',
+      name: 'Alvin Magbanua',
       course: 'BSCS',
       totalPayment: '₱ 60.00'
     },
     {
       rfidNumber: '007',
-      studentNumber: '23-123456',
-      studentName: 'Boo Seungkwan',
+      idNumber: '23-123456',
+      name: 'Boo Seungkwan',
       course: 'BSCS',
       totalPayment: '₱ 0.00'
     },
     {
       rfidNumber: '008',
-      studentNumber: '24-345678',
-      studentName: 'Joshua Hong',
+      idNumber: '24-345678',
+      name: 'Joshua Hong',
       course: 'BSIT',
       totalPayment: '₱ 140.00'
     },
     {
       rfidNumber: '009',
-      studentNumber: '25-010205',
-      studentName: 'Marc Louise Tagala',
+      idNumber: '25-010205',
+      name: 'Marc Louise Tagala',
       course: 'BSCS',
       totalPayment: '₱ 80.00'
     },
     {
       rfidNumber: '010',
-      studentNumber: '24-526890',
-      studentName: 'Jefferson Retamal',
+      idNumber: '24-526890',
+      name: 'Jefferson Retamal',
       course: 'BSIT',
       totalPayment: '₱ 82.00'
     },
     {
       rfidNumber: '011',
-      studentNumber: '25-312348',
-      studentName: 'Marites Dancel',
+      idNumber: '25-312348',
+      name: 'Marites Dancel',
       course: 'BSCS',
       totalPayment: '₱ 92.00'
     },
     {
       rfidNumber: '012',
-      studentNumber: '25-345678',
-      studentName: 'Jenella Yvonne Cañete',
+      idNumber: '25-345678',
+      name: 'Jenella Yvonne Cañete',
       course: 'BSIT',
       totalPayment: '₱ 56.00'
+    },
+     {
+      rfidNumber: '101',
+      idNumber: '123456',
+      name: 'Bongbong Marcos',
+      course: 'Faculty',
+      totalPayment: '₱ 96.00'
+    },
+    {
+      rfidNumber: '102',
+      idNumber: '789435',
+      name: 'Evangeline IDK',
+      course: 'Staff',
+      totalPayment: '₱ 76.00'
     },
   ];
 
   // Filter students based on search text and course
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
-      student.studentName.toLowerCase().includes(filterText.toLowerCase()) ||
-      student.studentNumber.toLowerCase().includes(filterText.toLowerCase()) ||
+      student.name.toLowerCase().includes(filterText.toLowerCase()) ||
+      student.idNumber.toLowerCase().includes(filterText.toLowerCase()) ||
       student.rfidNumber.toLowerCase().includes(filterText.toLowerCase());
     
     const matchesCourse = courseFilter === '' || student.course === courseFilter;
@@ -108,14 +129,14 @@ export default function List() {
 
   const handleExport = () => {
     // Create CSV content
-    const headers = ['RFID Number', 'Student Number', 'Student Name', 'Course', 'Total Payment'];
+    const headers = ['RFID Number', 'ID Number', 'Name', 'Course', 'Total Payment'];
     const csvContent = [
       headers.join(','),
       ...filteredStudents.map(student =>
         [
           student.rfidNumber,
-          student.studentNumber,
-          `"${student.studentName}"`,
+          student.idNumber,
+          `"${student.name}"`,
           student.course,
           student.totalPayment
         ].join(',')
@@ -132,6 +153,21 @@ export default function List() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleAddUser = () => {
+    if (formData.rfidNumber && formData.idNumber && formData.name && formData.course) {
+      // Here you would typically send the data to a server
+      console.log('Adding new user:', formData);
+      // Reset form and close modal
+      setFormData({
+        rfidNumber: '',
+        idNumber: '',
+        name: '',
+        course: ''
+      });
+      setShowAddModal(false);
+    }
+  };
+
   return (
     <div className="list-page">
       <div className="list-header">
@@ -146,6 +182,13 @@ export default function List() {
               className="search-input"
             />
           </div>
+          <button className="add-button" onClick={() => setShowAddModal(true)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add User
+          </button>
           <button className="filter-button">
             <select
               value={courseFilter}
@@ -155,6 +198,8 @@ export default function List() {
               <option value="">All Courses</option>
               <option value="BSIT">BSIT</option>
               <option value="BSCS">BSCS</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Staff">Staff</option>
             </select>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
@@ -175,6 +220,88 @@ export default function List() {
       <div className="list-content">
         <ListTable students={filteredStudents} />
       </div>
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add New User</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowAddModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="add-user-form" onSubmit={(e) => e.preventDefault()}>
+                <div className="form-group">
+                  <label className="form-label">RFID Number</label>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter RFID number"
+                    value={formData.rfidNumber}
+                    onChange={(e) => setFormData({...formData, rfidNumber: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">ID Number</label>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter ID number"
+                    value={formData.idNumber}
+                    onChange={(e) => setFormData({...formData, idNumber: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter full name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Course/Role</label>
+                  <select 
+                    className="form-input"
+                    value={formData.course}
+                    onChange={(e) => setFormData({...formData, course: e.target.value})}
+                  >
+                    <option value="">Select an option</option>
+                    <option value="BSIT">BSIT</option>
+                    <option value="BSCS">BSCS</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={handleAddUser}
+              >
+                Add User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
