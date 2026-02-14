@@ -1,41 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import DashboardHeader from '../../Dashboard/DashboardHeader';
-import StatCard from '../../Dashboard/StatCard';
-import ProductsTable from '../../Dashboard/ProductsTable';
+import React from 'react';
+import DashboardHeader from '../../components/Dashboard/DashboardHeader';
+import StatCard from '../../components/Dashboard/StatCard';
+import ProductsTable from '../../components/Dashboard/ProductsTable';
+import { productsData } from '../../data/products';
 import './Dashboard.css';
 
 export default function Dashboard() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch('http://localhost:5001/api/products');
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
-      const data = await response.json();
-      setProducts(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const stats = [
-    { title: 'Total Products', value: products.length.toString(), date: 'As of 01/23/2026' },
-    { title: 'Low Stock Items', value: products.filter(p => p.status === 'Low Stock').length.toString(), date: 'As of 01/23/2026' },
-    { title: 'Total Sales', value: '₱ ' + products.reduce((sum, p) => sum + parseFloat(p.revenue.replace('₱ ', '')), 0).toFixed(2), date: 'As of 01/23/2026' },
+    { title: 'Total Products', value: '4', date: 'As of 12/23/2025' },
+    { title: 'Low Stock Items', value: '3', date: 'As of 12/23/2025' },
+    { title: 'Total Sales', value: '₱ 755.00', date: 'As of 12/23/2025' },
   ];
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="dashboard">
@@ -50,7 +25,7 @@ export default function Dashboard() {
         </div>
 
         {/* Products Table Section */}
-        <ProductsTable products={products} />
+        <ProductsTable products={productsData} />
       </div>
     </div>
   );

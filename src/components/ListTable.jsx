@@ -8,9 +8,9 @@ export default function ListTable({ students }) {
         <thead>
           <tr>
             <th>RFID Number</th>
-            <th>Student Number</th>
-            <th>Student Name</th>
-            <th>Course</th>
+            <th>ID Number</th>
+            <th>Name</th>
+            <th>Course/Role</th>
             <th>Total Payment</th>
           </tr>
         </thead>
@@ -19,8 +19,8 @@ export default function ListTable({ students }) {
             students.map((student, index) => (
               <tr key={index}>
                 <td>{student.rfidNumber}</td>
-                <td>{student.studentNumber}</td>
-                <td>{student.studentName}</td>
+                <td>{student.idNumber}</td>
+                <td>{student.name}</td>
                 <td>{student.course}</td>
                 <td className="payment">{student.totalPayment}</td>
               </tr>
