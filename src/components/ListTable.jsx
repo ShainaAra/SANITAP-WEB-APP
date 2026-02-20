@@ -1,37 +1,92 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './ListTable.css';
+import { Checkbox } from './ui/checkbox';
 
 export default function ListTable({ students }) {
+  const [selectedRows, setSelectedRows] = useState(new Set());
+
+  const handleRowCheckboxChange = (index) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRows.size === students.length && students.length > 0) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(students.map((_, index) => index)));
+    }
+  };
+
+  const handleClearBalance = () => {
+    // TODO: Implement clear balance functionality
+    console.log('Clearing balance for rows:', Array.from(selectedRows));
+  };
+
   return (
-    <div className="list-table-wrapper">
-      <table className="list-table">
-        <thead>
-          <tr>
-            <th>RFID Number</th>
-            <th>ID Number</th>
-            <th>Name</th>
-            <th>Course/Role</th>
-            <th>Total Payment</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.length > 0 ? (
-            students.map((student, index) => (
-              <tr key={index}>
-                <td>{student.rfidNumber}</td>
-                <td>{student.idNumber}</td>
-                <td>{student.name}</td>
-                <td>{student.course}</td>
-                <td className="payment">{student.totalPayment}</td>
-              </tr>
-            ))
-          ) : (
+    <div className="list-table-container">
+      {selectedRows.size > 0 && (
+        <div className="table-actions">
+          <button className="clear-balance-button" onClick={handleClearBalance}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+              <path d="M3 21v-5h5"></path>
+            </svg>
+            Clear Balance ({selectedRows.size})
+          </button>
+        </div>
+      )}
+      <div className="list-table-wrapper">
+        <table className="list-table">
+          <thead>
             <tr>
-              <td colSpan="5" className="no-data">No students found</td>
+              <th className="checkbox-column">
+                {students.length > 0 && (
+                  <Checkbox
+                    checked={selectedRows.size === students.length && students.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                )}
+              </th>
+              <th>RFID Number</th>
+              <th>ID Number</th>
+              <th>Name</th>
+              <th>Course/Role</th>
+              <th>Total Payment</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {students.length > 0 ? (
+              students.map((student, index) => (
+                <tr key={index}>
+                  <td className="checkbox-column">
+                    <Checkbox
+                      checked={selectedRows.has(index)}
+                      onCheckedChange={() => handleRowCheckboxChange(index)}
+                    />
+                  </td>
+                  <td>{student.rfidNumber}</td>
+                  <td>{student.idNumber}</td>
+                  <td>{student.name}</td>
+                  <td>{student.course}</td>
+                  <td className="payment">{student.totalPayment}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="no-data">No students found</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

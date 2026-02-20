@@ -1,48 +1,140 @@
+.list-table-container {
+  width: 100%;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.25rem;
+  gap: 12px;
+}
+
+.clear-balance-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid #0b7451;
+  border-radius: 6px;
+  background-color: white;
+  color: #0b7451;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.clear-balance-button:hover {
+  background-color: #f0f8f5;
+  border-color: #0b7451;
+}
+
+.clear-balance-button svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
 .list-table-wrapper {
   width: 100%;
   overflow-x: auto;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 0;
+  border: 1px solid #e5e7eb;
 }
 
 .list-table {
   width: 100%;
   border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
 }
 
 .list-table thead tr {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 2px solid #f0f1f3;
+  background: linear-gradient(135deg, #f8f9fb 0%, #f0f1f3 100%);
 }
 
 .list-table thead th {
   text-align: left;
-  padding: 1rem;
-  font-weight: 700;
-  color: #0c4b05;
-  font-size: 0.85rem;
-  text-transform: capitalize;
+  padding: 1.25rem 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.list-table tbody tr {
+  border-bottom: 1px solid #f0f1f3;
+  transition: all 0.2s ease;
 }
 
 .list-table tbody tr:hover {
-  background-color: #fafafa;
+  background-color: #f8f9fb;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.list-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .list-table tbody td {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  color: #333;
-  font-size: 0.95rem;
+  padding: 1.25rem 1.5rem;
+  color: #1f2937;
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .list-table td.payment {
   font-weight: 600;
-  color: #0c4b05;
+  color: #059669;
 }
 
 .list-table td.no-data {
   text-align: center;
-  color: #999;
-  padding: 2rem;
+  color: #9ca3af;
+  padding: 3rem 1.5rem;
+  font-style: italic;
+}
+
+.checkbox-column {
+  width: 70px;
+  text-align: center;
+  padding: 1.25rem !important;
+}
+
+.checkbox-column th {
+  padding: 1.25rem !important;
+}
+
+.checkbox-column td {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem 0.75rem !important;
+}
+
+.checkbox-column [role="checkbox"] {
+  width: 15px;
+  height: 15px;
+  zoom: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-column [role="checkbox"]:hover {
+  transform: scale(1.05);
+}
+
+.checkbox-column [role="checkbox"] svg {
+  width: 20px;
+  height: 20px;
+  margin: auto;
 }
