@@ -12,19 +12,26 @@
   margin-bottom: 20px;
 }
 
+/* Table container with smooth edges */
 .table-wrapper {
-  border-radius: 8px;
+  border-radius: 12px; /* Increased from 8px to 12px for smoother edges */
   border: 1px solid #e5e7eb;
   background-color: white;
-  overflow-x: auto;
+  overflow: hidden; /* Changed from overflow-x: auto to contain the rounded corners */
   margin-top: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* Softer shadow to match the summary boxes */
+}
+
+/* Add a scrollable wrapper inside to handle overflow */
+.table-scroll {
+  overflow-x: auto;
 }
 
 .products-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate; /* Changed from collapse to separate for border-radius */
+  border-spacing: 0; /* Remove spacing between cells */
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .products-table th {
@@ -35,6 +42,35 @@
   font-weight: 600;
   font-size: 14px;
   border-bottom: 2px solid #dee2e6;
+}
+
+/* Round the top corners of the table */
+.products-table th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.products-table th:last-child {
+  border-top-right-radius: 12px;
+}
+
+/* Round the bottom corners of the last row */
+.products-table tr:last-child td:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.products-table tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
+}
+
+/* Remove bottom border from last row to prevent double border at rounded corners */
+.products-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Action header alignment */
+.products-table th.action-header {
+  text-align: center;
+  width: 70px;
 }
 
 .products-table td {
@@ -48,10 +84,11 @@
   background-color: #f8f9fa;
 }
 
-/* Action cell with menu */
+/* Action cell with menu - UPDATED for closer left-side dropdown */
 .action-cell {
   position: relative;
   text-align: center;
+  vertical-align: middle;
 }
 
 .menu-button {
@@ -59,41 +96,79 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-  padding: 0 8px;
+  padding: 4px 8px;
   color: #6c757d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
 .menu-button:hover {
-  color: #007bff;
+  background-color: #f0f0f0;
+  color: #0b7451;
+}
+
+.menu-button:focus {
+  outline: none;
 }
 
 .menu-dropdown {
   position: absolute;
-  right: 0;
-  top: 100%;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
   background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  min-width: 100px;
+  min-width: 70px;
+  overflow: hidden;
+  margin-right: 0px;
+  left: auto;
+}
+
+/* Add a tiny arrow pointing to the button */
+.menu-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -4px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 4px solid white;
+  filter: drop-shadow(1px 0 1px rgba(0,0,0,0.1));
 }
 
 .menu-item {
   display: block;
   width: 100%;
-  padding: 8px 16px;
-  text-align: left;
+  padding: 6px 12px;
+  text-align: center;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  color: #212529;
+  font-size: 13px;
+  color: #6c757d;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .menu-item:hover {
-  background-color: #f8f9fa;
-  color: #007bff;
+  background-color: #f0f0f0;
+  color: #0b7451;
+  font-weight: 500;
+}
+
+.menu-item:focus {
+  outline: none;
+  background-color: #f0f0f0;
+  color: #0b7451;
 }
 
 /* Status badges */

@@ -79,62 +79,80 @@ const ProductsTable = () => {
     return `₱ ${parseFloat(price).toFixed(2)}`;
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.action-cell')) {
+        setShowMenu(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   if (loading) {
     return <div className="loading">Loading products...</div>;
   }
 
   return (
     <div className="products-table-container">
-      <table className="products-table">
-        <thead>
-          <tr>
-            <th>PRODUCT NAME</th>
-            <th>PRICE</th>
-            <th>SALES</th>
-            <th>REVENUE</th>
-            <th>STATUS</th>
-            <th>ACTION</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>{formatPrice(product.price)}</td>
-              <td>{product.sales}</td>
-              <td>{formatPrice(product.revenue)}</td>
-              <td>
-                <span className={`status-badge ${product.status?.toLowerCase().replace(' ', '-')}`}>
-                  {product.status}
-                </span>
-              </td>
-              <td className="action-cell">
-                <button 
-                  className="menu-button"
-                  onClick={(e) => handleMenuClick(product.id, e)}
-                >
-                  ⋯
-                </button>
-                {showMenu === product.id && (
-                  <div className="menu-dropdown">
+      {/* Added table-wrapper and table-scroll for rounded corners */}
+      <div className="table-wrapper">
+        <div className="table-scroll">
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th>PRODUCT NAME</th>
+                <th>PRICE</th>
+                <th>SALES</th>
+                <th>REVENUE</th>
+                <th>STATUS</th>
+                <th className="action-header">ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td>{product.name}</td>
+                  <td>{formatPrice(product.price)}</td>
+                  <td>{product.sales}</td>
+                  <td>{formatPrice(product.revenue)}</td>
+                  <td>
+                    <span className={`status-badge ${product.status?.toLowerCase().replace(' ', '-')}`}>
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="action-cell">
                     <button 
-                      className="menu-item"
-                      onClick={() => handleEditClick(product)}
+                      className="menu-button"
+                      onClick={(e) => handleMenuClick(product.id, e)}
                     >
-                      Edit
+                      ⋯
                     </button>
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    {showMenu === product.id && (
+                      <div className="menu-dropdown">
+                        <button 
+                          className="menu-item"
+                          onClick={() => handleEditClick(product)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Edit Modal */}
       {showModal && editingProduct && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Product Details</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
