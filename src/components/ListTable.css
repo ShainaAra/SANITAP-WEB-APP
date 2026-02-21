@@ -138,3 +138,110 @@
   height: 20px;
   margin: auto;
 }
+
+/* Zero balance row styling */
+.zero-balance-row {
+  opacity: 0.7;
+  background-color: #f9f9f9;
+}
+
+.zero-balance-row:hover {
+  background-color: #f0f0f0 !important;
+}
+
+/* Zero balance payment styling */
+.payment.zero-balance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af !important;
+}
+
+/* Zero balance badge */
+.zero-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #e5e7eb;
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 8px;
+}
+
+/* Disabled checkbox styling */
+.checkbox-column [role="checkbox"][data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.checkbox-column [role="checkbox"][data-disabled]:hover {
+  transform: none;
+}
+
+/* Enhanced clear balance button when disabled */
+.clear-balance-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.clear-balance-button:disabled:hover {
+  background-color: #f5f5f5;
+  border-color: #0b7451;
+}
+
+/* Animation for notifications */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Optional: Add a notification container if you want to use toast notifications later */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.notification {
+  background-color: white;
+  border-left: 4px solid #0b7451;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  animation: slideIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+}
+
+.notification.warning {
+  border-left-color: #f59e0b;
+}
+
+.notification.error {
+  border-left-color: #ef4444;
+}
+
+.notification.success {
+  border-left-color: #10b981;
+}
+
+.notification-close {
+  margin-left: auto;
+  cursor: pointer;
+  color: #9ca3af;
+}

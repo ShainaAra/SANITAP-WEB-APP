@@ -193,6 +193,27 @@ app.delete('/api/users/:rfidNumber', (req, res) => {
   });
 });
 
+// Update user balance
+app.put('/api/users/:rfidNumber/balance', (req, res) => {
+  const { rfidNumber } = req.params;
+  const { totalPayment } = req.body;
+  
+  const query = 'UPDATE users SET totalPayment = ? WHERE rfidNumber = ?';
+  
+  db.query(query, [totalPayment, rfidNumber], (err, result) => {
+    if (err) {
+      console.error('Error updating balance:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (result.affectedRows === 0) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    res.json({ message: 'Balance updated successfully' });
+  });
+});
+
 // Add a test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working!' });
