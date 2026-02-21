@@ -137,36 +137,58 @@ export default function List() {
 
   // ADD THIS NEW FUNCTION HERE - right after handleAddUser and before the return statement
   const handleClearBalance = async (selectedStudents) => {
-    try {
-      // Update each selected student's balance to 0
-      const updatePromises = selectedStudents.map(student => 
-        fetch(`http://localhost:5001/api/users/${student.rfidNumber}/balance`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ totalPayment: 0 })
-        })
-      );
+  try {
+    // Filter out any students that might have zero balance (just in case)
+    const studentsToClear = selectedStudents.filter(student => {
+      const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+      return paymentValue > 0;
+    });
 
-      const responses = await Promise.all(updatePromises);
-      
-      // Check if all updates were successful
-      const allSuccessful = responses.every(response => response.ok);
-      
-      if (!allSuccessful) {
-        throw new Error('Some balances could not be cleared');
-      }
-
-      // Refresh the user list
-      await fetchUsers();
-      
-      alert(`Successfully cleared balances for ${selectedStudents.length} user(s)!`);
-    } catch (err) {
-      console.error('Error clearing balances:', err);
-      throw err; // Re-throw to be caught in ListTable
+    if (studentsToClear.length === 0) {
+      alert('No users with non-zero balance selected.');
+      return;
     }
-  };
+
+    if (studentsToClear.length < selectedStudents.length) {
+      const skippedCount = selectedStudents.length - studentsToClear.length;
+      alert(`${skippedCount} user(s) with zero balance were skipped.`);
+    }
+
+    // Update each selected student's balance to 0
+    const updatePromises = studentsToClear.map(student => 
+      fetch(`http://localhost:5001/api/users/${student.rfidNumber}/balance`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ totalPayment: 0 })
+      })
+    );
+
+    const responses = await Promise.all(updatePromises);
+    
+    // Check if all updates were successful
+    const allSuccessful = responses.every(response => response.ok);
+    
+    if (!allSuccessful) {
+      throw new Error('Some balances could not be cleared');
+    }
+
+    // Refresh the user list
+    await fetchUsers();
+    
+    // Show success message
+    if (studentsToClear.length === 1) {
+      alert(`Successfully cleared balance for ${studentsToClear[0].name}!`);
+    } else {
+      alert(`Successfully cleared balances for ${studentsToClear.length} user(s)!`);
+    }
+  } catch (err) {
+    console.error('Error clearing balances:', err);
+    alert('Error clearing balances: ' + err.message);
+    throw err; // Re-throw to be caught in ListTable
+  }
+};
 
   if (loading && users.length === 0) return <div className="list-page"><div className="loading">Loading users...</div></div>;
   if (error) return <div className="list-page"><div className="error">Error: {error}</div></div>;

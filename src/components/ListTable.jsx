@@ -30,6 +30,19 @@ export default function ListTable({ students, onClearBalance }) {
     // Get the selected students
     const selectedStudents = Array.from(selectedRows).map(index => students[index]);
     
+    // Check for users with zero balance
+    const zeroBalanceUsers = selectedStudents.filter(student => {
+      // Remove '₱ ' and parse as float
+      const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+      return paymentValue === 0;
+    });
+
+    if (zeroBalanceUsers.length > 0) {
+      const userNames = zeroBalanceUsers.map(user => user.name).join(', ');
+      alert(`The following users already have zero balance:\n${userNames}\n\nPlease uncheck them and try again.`);
+      return;
+    }
+
     // Confirm with user
     if (!window.confirm(`Clear balance for ${selectedRows.size} selected user(s)?`)) {
       return;
@@ -47,6 +60,12 @@ export default function ListTable({ students, onClearBalance }) {
     } finally {
       setIsClearing(false);
     }
+  };
+
+  // Helper function to check if a student has zero balance
+  const hasZeroBalance = (student) => {
+    const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+    return paymentValue === 0;
   };
 
   return (
@@ -90,18 +109,27 @@ export default function ListTable({ students, onClearBalance }) {
           <tbody>
             {students.length > 0 ? (
               students.map((student, index) => (
-                <tr key={student.rfidNumber || index}>
+                <tr 
+                  key={student.rfidNumber || index}
+                  className={hasZeroBalance(student) ? 'zero-balance-row' : ''}
+                >
                   <td className="checkbox-column">
                     <Checkbox
                       checked={selectedRows.has(index)}
                       onCheckedChange={() => handleRowCheckboxChange(index)}
+                      disabled={hasZeroBalance(student)}
                     />
                   </td>
                   <td>{student.rfidNumber}</td>
                   <td>{student.idNumber}</td>
                   <td>{student.name}</td>
                   <td>{student.course}</td>
-                  <td className="payment">{student.totalPayment}</td>
+                  <td className={`payment ${hasZeroBalance(student) ? 'zero-balance' : ''}`}>
+                    {student.totalPayment}
+                    {hasZeroBalance(student) && (
+                      <span className="zero-badge">Already Zero</span>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
