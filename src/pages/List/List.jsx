@@ -66,6 +66,14 @@ export default function List() {
     }
   };
 
+  // Handle Enter key in modal form
+  const handleModalKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission if inside a form
+      handleAddUser();
+    }
+  };
+
   // Filter users based on course (client-side filtering after search)
   const filteredUsers = users.filter(user => {
     const matchesCourse = courseFilter === '' || user.course === courseFilter;
@@ -81,7 +89,7 @@ export default function List() {
         [
           user.rfidNumber,
           user.idNumber,
-          "${user.name}",
+          `"${user.name}"`,
           user.course,
           user.totalPayment
         ].join(',')
@@ -124,7 +132,7 @@ export default function List() {
         setShowAddModal(false);
         
         // Refresh the user list
-        fetchUsers();
+        await fetchUsers();
         
         alert('User added successfully!');
       } catch (err) {
@@ -135,60 +143,59 @@ export default function List() {
     }
   };
 
-  // ADD THIS NEW FUNCTION HERE - right after handleAddUser and before the return statement
   const handleClearBalance = async (selectedStudents) => {
-  try {
-    // Filter out any students that might have zero balance (just in case)
-    const studentsToClear = selectedStudents.filter(student => {
-      const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
-      return paymentValue > 0;
-    });
+    try {
+      // Filter out any students that might have zero balance (just in case)
+      const studentsToClear = selectedStudents.filter(student => {
+        const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+        return paymentValue > 0;
+      });
 
-    if (studentsToClear.length === 0) {
-      alert('No users with non-zero balance selected.');
-      return;
+      if (studentsToClear.length === 0) {
+        alert('No users with non-zero balance selected.');
+        return;
+      }
+
+      if (studentsToClear.length < selectedStudents.length) {
+        const skippedCount = selectedStudents.length - studentsToClear.length;
+        alert(`${skippedCount} user(s) with zero balance were skipped.`);
+      }
+
+      // Update each selected student's balance to 0
+      const updatePromises = studentsToClear.map(student => 
+        fetch(`http://localhost:5001/api/users/${student.rfidNumber}/balance`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ totalPayment: 0 })
+        })
+      );
+
+      const responses = await Promise.all(updatePromises);
+      
+      // Check if all updates were successful
+      const allSuccessful = responses.every(response => response.ok);
+      
+      if (!allSuccessful) {
+        throw new Error('Some balances could not be cleared');
+      }
+
+      // Refresh the user list
+      await fetchUsers();
+      
+      // Show success message
+      if (studentsToClear.length === 1) {
+        alert(`Successfully cleared balance for ${studentsToClear[0].name}!`);
+      } else {
+        alert(`Successfully cleared balances for ${studentsToClear.length} user(s)!`);
+      }
+    } catch (err) {
+      console.error('Error clearing balances:', err);
+      alert('Error clearing balances: ' + err.message);
+      throw err; // Re-throw to be caught in ListTable
     }
-
-    if (studentsToClear.length < selectedStudents.length) {
-      const skippedCount = selectedStudents.length - studentsToClear.length;
-      alert(`${skippedCount} user(s) with zero balance were skipped.`);
-    }
-
-    // Update each selected student's balance to 0
-    const updatePromises = studentsToClear.map(student => 
-      fetch(`http://localhost:5001/api/users/${student.rfidNumber}/balance`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ totalPayment: 0 })
-      })
-    );
-
-    const responses = await Promise.all(updatePromises);
-    
-    // Check if all updates were successful
-    const allSuccessful = responses.every(response => response.ok);
-    
-    if (!allSuccessful) {
-      throw new Error('Some balances could not be cleared');
-    }
-
-    // Refresh the user list
-    await fetchUsers();
-    
-    // Show success message
-    if (studentsToClear.length === 1) {
-      alert(`Successfully cleared balance for ${studentsToClear[0].name}!`);
-    } else {
-      alert(`Successfully cleared balances for ${studentsToClear.length} user(s)!`);
-    }
-  } catch (err) {
-    console.error('Error clearing balances:', err);
-    alert('Error clearing balances: ' + err.message);
-    throw err; // Re-throw to be caught in ListTable
-  }
-};
+  };
 
   if (loading && users.length === 0) return <div className="list-page"><div className="loading">Loading users...</div></div>;
   if (error) return <div className="list-page"><div className="error">Error: {error}</div></div>;
@@ -245,7 +252,6 @@ export default function List() {
 
       <div className="list-content">
         {loading && <div className="loading">Updating...</div>}
-        {/* UPDATE THIS LINE - pass the handleClearBalance function as a prop */}
         <ListTable students={filteredUsers} onClearBalance={handleClearBalance} />
       </div>
 
@@ -272,6 +278,8 @@ export default function List() {
                     placeholder="Enter RFID number"
                     value={formData.rfidNumber}
                     onChange={(e) => setFormData({...formData, rfidNumber: e.target.value})}
+                    onKeyPress={handleModalKeyPress}
+                    autoFocus
                     required
                   />
                 </div>
@@ -284,6 +292,7 @@ export default function List() {
                     placeholder="Enter ID number"
                     value={formData.idNumber}
                     onChange={(e) => setFormData({...formData, idNumber: e.target.value})}
+                    onKeyPress={handleModalKeyPress}
                     required
                   />
                 </div>
@@ -296,6 +305,7 @@ export default function List() {
                     placeholder="Enter full name"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onKeyPress={handleModalKeyPress}
                     required
                   />
                 </div>
@@ -306,6 +316,7 @@ export default function List() {
                     className="form-input"
                     value={formData.course}
                     onChange={(e) => setFormData({...formData, course: e.target.value})}
+                    onKeyPress={handleModalKeyPress}
                     required
                   >
                     <option value="">Select an option</option>

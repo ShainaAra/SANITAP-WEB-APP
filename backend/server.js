@@ -89,8 +89,8 @@ app.delete('/api/products/:id', (req, res) => {
 // ============ USERS ROUTES ============
 // Get all users
 app.get('/api/users', (req, res) => {
-  // CORRECTED: Using rfidNumber (with 'i') as shown in your screenshot
-  const query = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment FROM users ORDER BY id DESC';
+  // Include balance_cleared_at field
+  const query = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at FROM users ORDER BY id DESC';
   
   db.query(query, (err, results) => {
     if (err) {
@@ -105,7 +105,8 @@ app.get('/api/users', (req, res) => {
       idNumber: user.studentNumber,
       name: user.studentName,
       course: user.course,
-      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`
+      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`,
+      wasCleared: user.balance_cleared_at !== null && parseFloat(user.totalPayment || 0) === 0
     }));
     
     res.json(formattedResults);
@@ -117,8 +118,8 @@ app.get('/api/users/search', (req, res) => {
   const { query } = req.query;
   const searchQuery = `%${query}%`;
   
-  // CORRECTED: Using rfidNumber in WHERE clause
-  const sql = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment FROM users WHERE rfidNumber LIKE ? OR studentNumber LIKE ? OR studentName LIKE ? ORDER BY id DESC';
+  // Include balance_cleared_at field
+  const sql = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at FROM users WHERE rfidNumber LIKE ? OR studentNumber LIKE ? OR studentName LIKE ? ORDER BY id DESC';
   
   db.query(sql, [searchQuery, searchQuery, searchQuery], (err, results) => {
     if (err) {
@@ -133,7 +134,8 @@ app.get('/api/users/search', (req, res) => {
       idNumber: user.studentNumber,
       name: user.studentName,
       course: user.course,
-      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`
+      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`,
+      wasCleared: user.balance_cleared_at !== null && parseFloat(user.totalPayment || 0) === 0
     }));
     
     res.json(formattedResults);
@@ -145,7 +147,6 @@ app.post('/api/users', (req, res) => {
   const { rfidNumber, idNumber, name, course } = req.body;
   
   // Check if RFID or Student Number already exists
-  // CORRECTED: Using rfidNumber in check query
   const checkQuery = 'SELECT * FROM users WHERE rfidNumber = ? OR studentNumber = ?';
   db.query(checkQuery, [rfidNumber, idNumber], (checkErr, checkResults) => {
     if (checkErr) {
@@ -158,17 +159,15 @@ app.post('/api/users', (req, res) => {
       return;
     }
     
-    // Insert new user with 0.00 initial payment
-    // CORRECTED: Using rfidNumber in insert query
-    const insertQuery = 'INSERT INTO users (rfidNumber, studentNumber, studentName, course, totalPayment) VALUES (?, ?, ?, ?, 0.00)';
-    db.query(insertQuery, [rfidNumber, idNumber, name, course], (err, result) => {
+    // Insert new user with 0.00 initial payment and NULL balance_cleared_at
+    const insertQuery = 'INSERT INTO users (rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at) VALUES (?, ?, ?, ?, 0.00, NULL)';
+    db.query(insertQuery, [rfidNumber, idNumber, name, course], (err) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
       res.status(201).json({ 
-        message: 'User added successfully',
-        id: result.insertId
+        message: 'User added successfully'
       });
     });
   });
@@ -177,7 +176,6 @@ app.post('/api/users', (req, res) => {
 // Delete user
 app.delete('/api/users/:rfidNumber', (req, res) => {
   const { rfidNumber } = req.params;
-  // CORRECTED: Using rfidNumber in delete query
   const query = 'DELETE FROM users WHERE rfidNumber = ?';
   
   db.query(query, [rfidNumber], (err, result) => {
@@ -193,24 +191,59 @@ app.delete('/api/users/:rfidNumber', (req, res) => {
   });
 });
 
-// Update user balance
+// Update user balance (with tracking for cleared balances)
 app.put('/api/users/:rfidNumber/balance', (req, res) => {
   const { rfidNumber } = req.params;
   const { totalPayment } = req.body;
   
-  const query = 'UPDATE users SET totalPayment = ? WHERE rfidNumber = ?';
+  // First, get the current user to check if they had a balance
+  const getUserQuery = 'SELECT totalPayment FROM users WHERE rfidNumber = ?';
   
-  db.query(query, [totalPayment, rfidNumber], (err, result) => {
-    if (err) {
-      console.error('Error updating balance:', err);
-      res.status(500).json({ error: err.message });
+  db.query(getUserQuery, [rfidNumber], (getErr, getResults) => {
+    if (getErr) {
+      console.error('Error fetching user:', getErr);
+      res.status(500).json({ error: getErr.message });
       return;
     }
-    if (result.affectedRows === 0) {
+    
+    if (getResults.length === 0) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    res.json({ message: 'Balance updated successfully' });
+    
+    const currentBalance = parseFloat(getResults[0].totalPayment);
+    const newBalance = parseFloat(totalPayment);
+    
+    // If we're clearing the balance (setting to 0) and the current balance was > 0
+    if (newBalance === 0 && currentBalance > 0) {
+      // Update balance and set cleared timestamp
+      const updateQuery = 'UPDATE users SET totalPayment = ?, balance_cleared_at = NOW() WHERE rfidNumber = ?';
+      db.query(updateQuery, [totalPayment, rfidNumber], (updateErr) => {
+        if (updateErr) {
+          console.error('Error updating balance:', updateErr);
+          res.status(500).json({ error: updateErr.message });
+          return;
+        }
+        res.json({ 
+          message: 'Balance cleared successfully',
+          cleared: true 
+        });
+      });
+    } else {
+      // Just update balance without clearing timestamp
+      const updateQuery = 'UPDATE users SET totalPayment = ? WHERE rfidNumber = ?';
+      db.query(updateQuery, [totalPayment, rfidNumber], (updateErr) => {
+        if (updateErr) {
+          console.error('Error updating balance:', updateErr);
+          res.status(500).json({ error: updateErr.message });
+          return;
+        }
+        res.json({ 
+          message: 'Balance updated successfully',
+          cleared: false 
+        });
+      });
+    }
   });
 });
 
