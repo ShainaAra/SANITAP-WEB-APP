@@ -37,22 +37,11 @@ export default function ListTable({ students, onClearBalance }) {
     // Get the selected students
     const selectedStudents = Array.from(selectedRows).map(index => students[index]);
     
-    // Check for users that have already been cleared (not just zero balance)
-    const clearedUsers = selectedStudents.filter(student => {
-      const paymentValue = getPaymentValue(student);
-      return paymentValue === 0 && student.wasCleared;
-    });
-
-    if (clearedUsers.length > 0) {
-      const userNames = clearedUsers.map(user => user.name).join(', ');
-      alert(`The following users have already been cleared:\n${userNames}\n\nPlease uncheck them and try again.`);
-      return;
-    }
-
-    // Check for new users with zero balance (not cleared yet)
-    const newUsersWithZero = selectedStudents.filter(student => {
-      const paymentValue = getPaymentValue(student);
-      return paymentValue === 0 && !student.wasCleared;
+    // Check for users with zero balance
+    const zeroBalanceUsers = selectedStudents.filter(student => {
+      // Remove '₱ ' and parse as float
+      const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+      return paymentValue === 0;
     });
 
     if (newUsersWithZero.length > 0) {
@@ -80,16 +69,10 @@ export default function ListTable({ students, onClearBalance }) {
     }
   };
 
-  // Check if user should have the CLEARED badge
-  const showClearedBadge = (student) => {
-    const paymentValue = getPaymentValue(student);
-    return paymentValue === 0 && student.wasCleared;
-  };
-
-  // Check if user has zero balance but is new (no badge)
-  const isNewWithZero = (student) => {
-    const paymentValue = getPaymentValue(student);
-    return paymentValue === 0 && !student.wasCleared;
+  // Helper function to check if a student has zero balance
+  const hasZeroBalance = (student) => {
+    const paymentValue = parseFloat(student.totalPayment.replace('₱ ', ''));
+    return paymentValue === 0;
   };
 
   return (
