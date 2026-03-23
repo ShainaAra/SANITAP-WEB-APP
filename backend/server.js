@@ -112,53 +112,130 @@ app.delete("/api/products/:id", (req, res) => {
   });
 });
 
-// ============ USERS ROUTES ============
-// Get all users
-app.get('/api/users', (req, res) => {
-  // CORRECTED: Using rfidNumber (with 'i') as shown in your screenshot
-  const query = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment FROM users ORDER BY id DESC';
-  
-  db.query(query, (err, results) => {
+// Restock product
+app.post('/restock', (req, res) => {
+
+    const product = req.body.product;
+
+    const sql = `
+    UPDATE products
+    SET servo_rotation = 0,
+        status = 'IN STOCK'
+    WHERE product_code = ?
+    `;
+
+    db.query(sql, [product], (err,result)=>{
+        if(err){
+            res.json({status:"ERROR"});
+        }else{
+            res.json({status:"RESTOCKED"});
+        }
+    });
+
+});
+
+/* =========================
+   RFID VALIDATION
+========================= */
+
+app.get("/api/check-rfid", (req, res) => {
+  const uid = req.query.uid;
+
+  if (!uid) {
+    return res.json({ status: "ERROR", message: "No UID provided" });
+  }
+
+  db.query("CALL ValidateRFID(?)", [uid], (err, result) => {
     if (err) {
       console.error(err);
       return res.json({ status: "ERROR" });
     }
-    
-    // Format the results to match what your frontend expects
-    const formattedResults = results.map(user => ({
-      rfidNumber: user.rfidNumber,
-      idNumber: user.studentNumber,
-      name: user.studentName,
-      course: user.course,
-      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`
-    }));
-    
-    res.json(formattedResults);
+
+    if (result[0].length > 0) {
+      res.json(result[0][0]);
+    } else {
+      res.json({ status: "INVALID" });
+    }
   });
 });
 
-// Search users
-app.get('/api/users/search', (req, res) => {
-  const { query } = req.query;
-  const searchQuery = `%${query}%`;
-  
-  // CORRECTED: Using rfidNumber in WHERE clause
-  const sql = 'SELECT rfidNumber, studentNumber, studentName, course, totalPayment FROM users WHERE rfidNumber LIKE ? OR studentNumber LIKE ? OR studentName LIKE ? ORDER BY id DESC';
-  
-  db.query(sql, [searchQuery, searchQuery, searchQuery], (err, results) => {
-    if (err) {
-      console.error('Search error:', err);
-      res.status(500).json({ error: err.message });
-      return;
+
+/* =========================
+   PROCESS PURCHASE (RFID MACHINE)
+========================= */
+
+app.post("/api/purchase", (req, res) => {
+  const { rfid, product_code } = req.body;
+
+  if (!rfid || !product_code) {
+    return res.json({ status: "ERROR", message: "Missing data" });
+  }
+
+  db.query(
+    "CALL ProcessPurchase(?,?)",
+    [rfid, product_code],
+    async (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "ERROR" });
+      }
+
+      // ✅ AFTER PURCHASE → CHECK PRODUCT STATUS
+      db.query(
+        "SELECT name, status FROM products WHERE product_code=?",
+        [product_code],
+        async (err2, productResult) => {
+          if (!err2 && productResult.length > 0) {
+            const product = productResult[0];
+
+            if (product.status?.toUpperCase() === "LOW STOCK") {
+              try {
+                await admin.messaging().send({
+                  topic: "admins",
+                  notification: {
+                    title: "⚠️ Low Stock Alert",
+                    body: `${product.name} is now LOW STOCK. Please restock.`
+                  },
+                  data: {
+                      title: "⚠️ Low Stock Alert",
+                      body: `${product.name} is now LOW STOCK. Please restock.`
+                  }
+                });
+
+                console.log("✅ LOW STOCK notification sent");
+              } catch (error) {
+                console.error("❌ Firebase error:", error);
+              }
+            }
+          }
+        }
+      );
+
+      res.json(result[0][0]);
     }
-    
-    // Format the results
-    const formattedResults = results.map(user => ({
+  );
+});
+
+
+/* =========================
+   USERS ROUTES
+========================= */
+
+// Get users
+app.get("/api/users", (req, res) => {
+  const sql =
+    "SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at FROM users ORDER BY id DESC";
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const formatted = results.map((user) => ({
       rfidNumber: user.rfidNumber,
       idNumber: user.studentNumber,
       name: user.studentName,
       course: user.course,
-      totalPayment: `₱ ${parseFloat(user.totalPayment || 0).toFixed(2)}`
+      totalPayment: parseFloat(user.totalPayment),
+      wasCleared: user.balance_cleared_at !== null
     }));
 
     res.json(formatted);
@@ -168,44 +245,62 @@ app.get('/api/users/search', (req, res) => {
 // Add user
 app.post("/api/users", (req, res) => {
   const { rfidNumber, idNumber, name, course } = req.body;
-  
-  // Check if RFID or Student Number already exists
-  // CORRECTED: Using rfidNumber in check query
-  const checkQuery = 'SELECT * FROM users WHERE rfidNumber = ? OR studentNumber = ?';
-  db.query(checkQuery, [rfidNumber, idNumber], (checkErr, checkResults) => {
-    if (checkErr) {
-      res.status(500).json({ error: checkErr.message });
-      return;
-    }
-    
-    if (checkResults.length > 0) {
-      res.status(400).json({ message: 'RFID number or Student number already exists' });
-      return;
-    }
-    
-    // Insert new user with 0.00 initial payment
-    // CORRECTED: Using rfidNumber in insert query
-    const insertQuery = 'INSERT INTO users (rfidNumber, studentNumber, studentName, course, totalPayment) VALUES (?, ?, ?, ?, 0.00)';
-    db.query(insertQuery, [rfidNumber, idNumber, name, course], (err, result) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.status(201).json({ 
-        message: 'User added successfully',
-        id: result.insertId
+
+  const check = "SELECT * FROM users WHERE rfidNumber=? OR studentNumber=?";
+
+  db.query(check, [rfidNumber, idNumber], (err, results) => {
+    if (results.length > 0) {
+      return res.status(400).json({
+        message: "RFID or Student number already exists"
       });
+    }
+
+    const insert =
+      "INSERT INTO users (rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at) VALUES (?,?,?,?,0.00, NULL)";
+
+    db.query(insert, [rfidNumber, idNumber, name, course], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.json({ message: "User added successfully" });
     });
   });
 });
 
 // Delete user
-app.delete('/api/users/:rfidNumber', (req, res) => {
-  const { rfidNumber } = req.params;
-  // CORRECTED: Using rfidNumber in delete query
-  const query = 'DELETE FROM users WHERE rfidNumber = ?';
-  
-  db.query(query, [rfidNumber], (err, result) => {
+app.delete("/api/users/:rfidNumber", (req, res) => {
+  db.query(
+    "DELETE FROM users WHERE rfidNumber=?",
+    [req.params.rfidNumber],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.json({ message: "User deleted successfully" });
+    }
+  );
+});
+
+/* =========================
+   CLEAR MULTIPLE BALANCES
+========================= */
+
+app.post('/api/clear-balances', (req, res) => {
+  const { rfids } = req.body;
+
+  if (!rfids || rfids.length === 0) {
+    return res.status(400).json({
+      status: "ERROR",
+      message: "No users provided"
+    });
+  }
+
+  // Step 1: Get ALL selected users (not just > 0)
+  const selectQuery = `
+    SELECT rfidNumber, totalPayment, balance_cleared_at
+    FROM users 
+    WHERE rfidNumber IN (?)
+  `;
+
+  db.query(selectQuery, [rfids], (err, results) => {
     if (err) {
       console.error("SELECT ERROR:", err);
       return res.status(500).json({ status: "ERROR" });
@@ -249,24 +344,24 @@ app.delete('/api/users/:rfidNumber', (req, res) => {
   });
 });
 
-// Update user balance
-app.put('/api/users/:rfidNumber/balance', (req, res) => {
-  const { rfidNumber } = req.params;
-  const { totalPayment } = req.body;
-  
-  const query = 'UPDATE users SET totalPayment = ? WHERE rfidNumber = ?';
-  
-  db.query(query, [totalPayment, rfidNumber], (err, result) => {
-    if (err) {
-      console.error('Error updating balance:', err);
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (result.affectedRows === 0) {
-      res.status(404).json({ message: 'User not found' });
-      return;
-    }
-    res.json({ message: 'Balance updated successfully' });
+/* =========================
+   TRANSACTIONS
+========================= */
+
+// Get transaction history
+app.get("/api/transactions", (req, res) => {
+  const sql = `
+  SELECT t.id, u.studentName, t.rfid_number, t.product_name,
+         t.price, t.transaction_date
+  FROM transactions t
+  JOIN users u ON t.user_id = u.id
+  ORDER BY t.transaction_date DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    res.json(results);
   });
 });
 
