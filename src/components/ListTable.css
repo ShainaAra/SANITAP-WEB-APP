@@ -245,3 +245,90 @@
   cursor: pointer;
   color: #9ca3af;
 }
+
+/* Existing styles remain, add these new ones */
+
+/* Cleared row styling */
+.cleared-row {
+  opacity: 0.7;
+  background-color: #f0f8f5;
+}
+
+.cleared-row:hover {
+  background-color: #e0f0e8 !important;
+}
+
+/* New user with zero balance styling */
+.new-zero-row {
+  background-color: #f9f9f9;
+}
+
+.new-zero-row:hover {
+  background-color: #f0f0f0 !important;
+}
+
+/* Payment amount styling */
+.cleared-balance {
+  color: #059669 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-zero {
+  color: #9ca3af !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cleared badge */
+.cleared-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #059669;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 8px;
+}
+
+/* New user badge */
+.new-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 8px;
+}
+
+/* Disabled checkbox styling */
+.checkbox-column [role="checkbox"][data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.checkbox-column [role="checkbox"][data-disabled]:hover {
+  transform: none;
+}
+
+/* Clear balance button when disabled */
+.clear-balance-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.clear-balance-button:disabled:hover {
+  background-color: #f5f5f5;
+  border-color: #0b7451;
+}
