@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import './ProductsTable.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { authFetch } from "../utils/authFetch";
+import "./ProductsTable.css";
 
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = "http://localhost:5001/api";
+const REFRESH_INTERVAL = 3000;
 
 const ProductsTable = () => {
   const [products, setProducts] = useState([]);
@@ -10,21 +12,39 @@ const ProductsTable = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProducts();
+  const fetchProducts = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader) {
+        setLoading(true);
+      }
+
+      const response = await authFetch(`${API_BASE_URL}/products`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+
+      const data = await response.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading products:", error);
+      setProducts([]);
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/products`);
-      const data = await response.json();
-      setProducts(data);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchProducts(true);
+
+    const interval = setInterval(() => {
+      fetchProducts(false);
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [fetchProducts]);
 
   const handleMenuClick = (productId, e) => {
     e.stopPropagation();
@@ -32,7 +52,6 @@ const ProductsTable = () => {
   };
 
   const handleEditClick = (product) => {
-    console.log('Editing product:', product);
     setEditingProduct({ ...product });
     setShowModal(true);
     setShowMenu(null);
@@ -40,57 +59,55 @@ const ProductsTable = () => {
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    // Only allow editing name and price
-    if (name === 'name' || name === 'price') {
-      setEditingProduct(prev => ({
+
+    if (name === "name" || name === "price") {
+      setEditingProduct((prev) => ({
         ...prev,
-        [name]: name === 'price' ? parseFloat(value) || 0 : value
+        [name]: name === "price" ? parseFloat(value) || 0 : value,
       }));
     }
   };
 
   const handleSave = async () => {
     try {
-      console.log('Saving product:', editingProduct);
-      
-      const response = await fetch(`${API_BASE_URL}/products/${editingProduct.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editingProduct)
-      });
+      const response = await authFetch(
+        `${API_BASE_URL}/products/${editingProduct.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(editingProduct),
+        }
+      );
 
-      if (!response.ok) throw new Error('Failed to update');
+      if (!response.ok) {
+        throw new Error("Failed to update");
+      }
 
-      setProducts(products.map(p => 
-        p.id === editingProduct.id ? editingProduct : p
-      ));
-      
+      await fetchProducts(false);
+
       setShowModal(false);
       setEditingProduct(null);
     } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Failed to update product');
+      console.error("Error updating product:", error);
+      alert("Failed to update product");
     }
   };
 
   const formatPrice = (price) => {
-    return `₱ ${parseFloat(price).toFixed(2)}`;
+    return `₱ ${parseFloat(price || 0).toFixed(2)}`;
   };
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest('.action-cell')) {
+      if (!e.target.closest(".action-cell")) {
         setShowMenu(null);
       }
     };
-    document.addEventListener('click', handleClickOutside);
+
+    document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [showMenu]);
 
   if (loading) {
     return <div className="loading">Loading products...</div>;
@@ -98,7 +115,6 @@ const ProductsTable = () => {
 
   return (
     <div className="products-table-container">
-      {/* Added table-wrapper and table-scroll for rounded corners */}
       <div className="table-wrapper">
         <div className="table-scroll">
           <table className="products-table">
@@ -112,54 +128,71 @@ const ProductsTable = () => {
                 <th className="action-header">ACTION</th>
               </tr>
             </thead>
+
             <tbody>
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td>{product.name}</td>
-                  <td>{formatPrice(product.price)}</td>
-                  <td>{product.sales}</td>
-                  <td>{formatPrice(product.revenue)}</td>
-                  <td>
-                    <span className={`status-badge ${product.status?.toLowerCase().replace(' ', '-')}`}>
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="action-cell">
-                    <button 
-                      className="menu-button"
-                      onClick={(e) => handleMenuClick(product.id, e)}
-                    >
-                      ⋯
-                    </button>
-                    {showMenu === product.id && (
-                      <div className="menu-dropdown">
-                        <button 
-                          className="menu-item"
-                          onClick={() => handleEditClick(product)}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    )}
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
+                    No products found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                products.map((product) => (
+                  <tr key={product.id}>
+                    <td>{product.name}</td>
+                    <td>{formatPrice(product.price)}</td>
+                    <td>{product.sales}</td>
+                    <td>{formatPrice(product.revenue)}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${product.status
+                          ?.toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
+                        {product.status}
+                      </span>
+                    </td>
+                    <td className="action-cell">
+                      <button
+                        className="menu-button"
+                        onClick={(e) => handleMenuClick(product.id, e)}
+                      >
+                        ⋯
+                      </button>
+
+                      {showMenu === product.id && (
+                        <div className="menu-dropdown">
+                          <button
+                            className="menu-item"
+                            onClick={() => handleEditClick(product)}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Edit Modal */}
       {showModal && editingProduct && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Product Details</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <button
+                className="modal-close"
+                onClick={() => setShowModal(false)}
+              >
+                ×
+              </button>
             </div>
-            
+
             <div className="modal-body">
-              {/* PRODUCT NAME - Editable */}
               <div className="form-group">
                 <label>PRODUCT NAME</label>
                 <input
@@ -172,7 +205,6 @@ const ProductsTable = () => {
                 />
               </div>
 
-              {/* PRICE - Editable */}
               <div className="form-group">
                 <label>PRICE</label>
                 <input
@@ -186,23 +218,26 @@ const ProductsTable = () => {
                 />
               </div>
 
-              {/* SALES - Read Only */}
               <div className="form-group">
                 <label>SALES</label>
                 <div className="read-only-value">{editingProduct.sales}</div>
               </div>
 
-              {/* TOTAL SALES - Read Only */}
               <div className="form-group">
                 <label>TOTAL SALES</label>
-                <div className="read-only-value">{formatPrice(editingProduct.revenue)}</div>
+                <div className="read-only-value">
+                  {formatPrice(editingProduct.revenue)}
+                </div>
               </div>
 
-              {/* STATUS - Read Only */}
               <div className="form-group">
                 <label>STATUS</label>
                 <div className="read-only-value">
-                  <span className={`status-badge ${editingProduct.status?.toLowerCase().replace(' ', '-')}`}>
+                  <span
+                    className={`status-badge ${editingProduct.status
+                      ?.toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
                     {editingProduct.status}
                   </span>
                 </div>
@@ -210,7 +245,10 @@ const ProductsTable = () => {
             </div>
 
             <div className="modal-footer">
-              <button className="cancel-button" onClick={() => setShowModal(false)}>
+              <button
+                className="cancel-button"
+                onClick={() => setShowModal(false)}
+              >
                 Cancel
               </button>
               <button className="save-button" onClick={handleSave}>

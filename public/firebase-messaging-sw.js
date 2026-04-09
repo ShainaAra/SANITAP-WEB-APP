@@ -10,14 +10,48 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ✅ Background notification handler
 messaging.onBackgroundMessage((payload) => {
   console.log("🔥 BACKGROUND RECEIVED:", payload);
 
-  const { title, body } = payload.data; // now payload.data is defined
-  self.registration.showNotification(title, { body, icon: "/logo192.png" });
+  const title = payload?.data?.title || "Notification";
+  const product = payload?.data?.product || "";
+  const message = payload?.data?.message || "";
+  const url = payload?.data?.url || "http://localhost:5173/";
+
+  const body = `${product} ${message}`.trim();
+
+  self.registration.showNotification(title, {
+    body,
+    icon: "/logo192.png",
+    badge: "/logo192.png",
+    requireInteraction: true,
+    data: { url }
+  });
 });
 
-// ✅ Debugging
-self.addEventListener('install', () => console.log("✅ SW Installed"));
-self.addEventListener('activate', () => console.log("✅ SW Activated"));
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "http://localhost:5173/";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("localhost:5173") && "focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+
+      return clients.openWindow(targetUrl);
+    })
+  );
+});
+
+self.addEventListener("install", () => {
+  console.log("✅ SW Installed");
+});
+
+self.addEventListener("activate", () => {
+  console.log("✅ SW Activated");
+});

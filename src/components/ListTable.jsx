@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './ListTable.css';
 import { Checkbox } from './ui/checkbox';
 
-export default function ListTable({ students, onClearBalance }) {
+export default function ListTable({ students, onClearBalance, onDeleteUsers }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [isClearing, setIsClearing] = useState(false);
 
@@ -32,61 +32,27 @@ export default function ListTable({ students, onClearBalance }) {
   };
 
   const handleClearBalance = async () => {
-    if (selectedRows.size === 0) return;
-    
-    // Get the selected students
-    const selectedStudents = Array.from(selectedRows).map(index => students[index]);
-    
-    // Check for users that have already been cleared (not just zero balance)
-    const clearedUsers = selectedStudents.filter(student => {
-      const paymentValue = getPaymentValue(student);
-      return paymentValue === 0 && student.wasCleared;
-    });
+  if (selectedRows.size === 0) return;
 
-    if (clearedUsers.length > 0) {
-      const userNames = clearedUsers.map(user => user.name).join(', ');
-      alert(`The following users have already been cleared:\n${userNames}\n\nPlease uncheck them and try again.`);
-      return;
-    }
+  const selectedStudents = Array.from(selectedRows).map(index => students[index]);
 
-    // Check for new users with zero balance (not cleared yet)
-    const newUsersWithZero = selectedStudents.filter(student => {
-      const paymentValue = getPaymentValue(student);
-      return paymentValue === 0 && !student.wasCleared;
-    });
+  setIsClearing(true);
+  try {
+    await onClearBalance(selectedStudents);
+    setSelectedRows(new Set());
+  } catch (error) {
+    console.error('Error clearing balances:', error);
+    alert('Failed to clear balances. Please try again.');
+  } finally {
+    setIsClearing(false);
+  }
+};
 
-    if (newUsersWithZero.length > 0) {
-      const userNames = newUsersWithZero.map(user => user.name).join(', ');
-      alert(`The following users are new and have zero balance:\n${userNames}\n\nNo need to clear. Please uncheck them.`);
-      return;
-    }
-
-    // Confirm with user
-    if (!window.confirm(`Clear balance for ${selectedRows.size} selected user(s)?`)) {
-      return;
-    }
-
-    setIsClearing(true);
-    try {
-      // Call the parent component's handler
-      await onClearBalance(selectedStudents);
-      // Clear selection after successful operation
-      setSelectedRows(new Set());
-    } catch (error) {
-      console.error('Error clearing balances:', error);
-      alert('Failed to clear balances. Please try again.');
-    } finally {
-      setIsClearing(false);
-    }
-  };
-
-  // Check if user should have the CLEARED badge
   const showClearedBadge = (student) => {
     const paymentValue = getPaymentValue(student);
     return paymentValue === 0 && student.wasCleared;
   };
 
-  // Check if user has zero balance but is new (no badge)
   const isNewWithZero = (student) => {
     const paymentValue = getPaymentValue(student);
     return paymentValue === 0 && !student.wasCleared;
@@ -96,21 +62,26 @@ export default function ListTable({ students, onClearBalance }) {
     <div className="list-table-container">
       {selectedRows.size > 0 && (
         <div className="table-actions">
-          <button 
-            className="clear-balance-button" 
+          <button
+            className="clear-balance-button"
             onClick={handleClearBalance}
             disabled={isClearing}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-              <path d="M21 3v5h-5"></path>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-              <path d="M3 21v-5h5"></path>
-            </svg>
             {isClearing ? 'Clearing...' : `Clear Balance (${selectedRows.size})`}
+          </button>
+
+          <button
+            className="delete-button"
+            onClick={() => {
+              const selectedStudents = Array.from(selectedRows).map(index => students[index]);
+              onDeleteUsers(selectedStudents);
+            }}
+          >
+            Delete ({selectedRows.size})
           </button>
         </div>
       )}
+
       <div className="list-table-wrapper">
         <table className="list-table">
           <thead>
@@ -135,9 +106,9 @@ export default function ListTable({ students, onClearBalance }) {
               students.map((student, index) => {
                 const cleared = showClearedBadge(student);
                 const newZero = isNewWithZero(student);
-                
+
                 return (
-                  <tr 
+                  <tr
                     key={student.rfidNumber || index}
                     className={cleared ? 'cleared-row' : newZero ? 'new-zero-row' : ''}
                   >
@@ -145,7 +116,7 @@ export default function ListTable({ students, onClearBalance }) {
                       <Checkbox
                         checked={selectedRows.has(index)}
                         onCheckedChange={() => handleRowCheckboxChange(index)}
-                        disabled={cleared || newZero}
+                        disabled={false}
                       />
                     </td>
                     <td>{student.rfidNumber}</td>

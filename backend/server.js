@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import process from 'process';
 import admin from 'firebase-admin';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import serviceAccount from './firebase-key.json' assert { type: "json" };
 
 admin.initializeApp({
@@ -19,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'sanitap_db'
@@ -32,6 +34,86 @@ db.connect((err) => {
   }
   console.log("Connected to MySQL database");
 });
+
+// Log in route
+
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      message: "Username and password are required"
+    });
+  }
+
+  const sql = "SELECT * FROM admins WHERE username = ?";
+
+  db.query(sql, [username], async (err, results) => {
+    if (err) {
+      console.error("Login error:", err);
+      return res.status(500).json({ message: "Server error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({
+        message: "Invalid username or password"
+      });
+    }
+
+    const adminUser = results[0];
+
+    const isMatch = await bcrypt.compare(password, adminUser.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid username or password"
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: adminUser.id,
+        username: adminUser.username
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      admin: {
+        id: adminUser.id,
+        username: adminUser.username
+      }
+    });
+  });
+});
+
+// JWT MIDDLEWARE (PROTECT ADMIN ROUTES)
+
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  // Check if header exists
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      message: "Access denied. No token provided."
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.admin = decoded;
+    next(); // allow access
+  } catch (error) {
+    return res.status(401).json({
+      message: "Invalid or expired token"
+    });
+  }
+};
 
 // FCM Subscription Route
 app.post("/api/subscribe", async (req, res) => {
@@ -47,7 +129,7 @@ app.post("/api/subscribe", async (req, res) => {
 ========================= */
 
 // Get all products
-app.get("/api/products", (req, res) => {
+app.get("/api/products", verifyToken, (req, res) => {
   const sql = `
     SELECT id, product_code, name, price, sales, revenue, status
     FROM products
@@ -75,7 +157,7 @@ app.get("/api/products", (req, res) => {
 });
 
 // Add product
-app.post("/api/products", (req, res) => {
+app.post("/api/products", verifyToken, (req, res) => {
   const { product_code, name, price, sales, revenue, status } = req.body;
 
   const sql =
@@ -89,7 +171,7 @@ app.post("/api/products", (req, res) => {
 });
 
 // Update product
-app.put("/api/products/:id", (req, res) => {
+app.put("/api/products/:id", verifyToken, (req, res) => {
   const { id } = req.params;
   const { product_code, name, price, sales, revenue, status } = req.body;
 
@@ -104,7 +186,7 @@ app.put("/api/products/:id", (req, res) => {
 });
 
 // Delete product
-app.delete("/api/products/:id", (req, res) => {
+app.delete("/api/products/:id", verifyToken, (req, res) => {
   db.query("DELETE FROM products WHERE id=?", [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
 
@@ -133,6 +215,33 @@ app.post('/restock', (req, res) => {
     });
 
 });
+
+// Dashboard stats
+app.get("/api/dashboard-stats", verifyToken, (req, res) => {
+  const sql = `
+    SELECT 
+      COUNT(*) AS totalProducts,
+      SUM(CASE WHEN status = 'LOW STOCK' THEN 1 ELSE 0 END) AS lowStock,
+      SUM(revenue) AS totalSales
+    FROM products
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Stats error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    const data = results[0];
+
+    res.json({
+      totalProducts: data.totalProducts || 0,
+      lowStock: data.lowStock || 0,
+      totalSales: parseFloat(data.totalSales || 0)
+    });
+  });
+});
+
 
 /* =========================
    RFID VALIDATION
@@ -188,17 +297,32 @@ app.post("/api/purchase", (req, res) => {
           if (!err2 && productResult.length > 0) {
             const product = productResult[0];
 
-            if (product.status?.toUpperCase() === "LOW STOCK") {
+            if (product.status?.trim().toUpperCase() === "LOW STOCK") {
               try {
+                const title = "Low Stock Alert";
+                const productName = product.name;
+                const message = "is now LOW STOCK. Please restock.";
+
+                // ✅ Save to database
+                db.query(
+                  `INSERT INTO notifications (title, product_name, message, type, is_read)
+                  VALUES (?, ?, ?, ?, 0)`,
+                  [title, productName, message, "low_stock"],
+                  (insertErr) => {
+                    if (insertErr) {
+                      console.error("❌ Notification save error:", insertErr);
+                    }
+                  }
+                );
+
+                // ✅ Send FCM
                 await admin.messaging().send({
                   topic: "admins",
-                  notification: {
-                    title: "⚠️ Low Stock Alert",
-                    body: `${product.name} is now LOW STOCK. Please restock.`
-                  },
                   data: {
-                      title: "⚠️ Low Stock Alert",
-                      body: `${product.name} is now LOW STOCK. Please restock.`
+                    title,
+                    product: productName,
+                    message,
+                    url: "http://localhost:5173/"
                   }
                 });
 
@@ -216,13 +340,159 @@ app.post("/api/purchase", (req, res) => {
   );
 });
 
+// Get notifications
+app.get("/api/notifications", verifyToken, (req, res) => {
+  const sql = `
+    SELECT id, title, product_name, message, type, is_read, created_at
+    FROM notifications
+    ORDER BY created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Fetch notifications error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    res.json(results);
+  });
+});
+
+// Mark notification as read
+app.put("/api/notifications/:id/read", verifyToken, (req, res) => {
+  const { id } = req.params;
+
+  db.query(
+    "UPDATE notifications SET is_read = 1 WHERE id = ?",
+    [id],
+    (err) => {
+      if (err) {
+        console.error("❌ Mark read error:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({ message: "Notification marked as read" });
+    }
+  );
+});
+
+// Mark all notifications as read
+app.put("/api/notifications/read-all", verifyToken, (req, res) => {
+  db.query(
+    "UPDATE notifications SET is_read = 1 WHERE is_read = 0",
+    (err) => {
+      if (err) {
+        console.error("❌ Mark all read error:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({ message: "All notifications marked as read" });
+    }
+  );
+});
+
+// Get product status (for restock)
+app.get("/api/product-status", (req, res) => {
+  const { product } = req.query;
+
+  if (!product) {
+    return res.status(400).json({ status: "ERROR", message: "Missing product" });
+  }
+
+  db.query(
+    "SELECT status FROM products WHERE product_code = ? LIMIT 1",
+    [product],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "ERROR" });
+      }
+
+      if (result.length === 0) {
+        return res.status(404).json({ status: "ERROR", message: "Product not found" });
+      }
+
+      return res.json({
+        product,
+        status: result[0].status
+      });
+    }
+  );
+});
+
 
 /* =========================
    USERS ROUTES
 ========================= */
 
+// Search users
+app.get("/api/users/search", verifyToken, (req, res) => {
+  const query = (req.query.query || "").trim();
+
+  const baseSql = `
+    SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at
+    FROM users
+  `;
+
+  if (!query) {
+    const sql = `${baseSql} ORDER BY id DESC`;
+
+    return db.query(sql, (err, results) => {
+      if (err) {
+        console.error("Search users error:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const formatted = results.map((user) => ({
+        rfidNumber: user.rfidNumber,
+        idNumber: user.studentNumber,
+        name: user.studentName,
+        course: user.course,
+        totalPayment: parseFloat(user.totalPayment) || 0,
+        wasCleared: user.balance_cleared_at !== null
+      }));
+
+      res.json(formatted);
+    });
+  }
+
+  const searchTerm = `%${query}%`;
+
+  const sql = `
+    SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at
+    FROM users
+    WHERE rfidNumber LIKE ?
+       OR studentNumber LIKE ?
+       OR studentName LIKE ?
+       OR course LIKE ?
+    ORDER BY id DESC
+  `;
+
+  db.query(
+    sql,
+    [searchTerm, searchTerm, searchTerm, searchTerm],
+    (err, results) => {
+      if (err) {
+        console.error("Search users error:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const formatted = results.map((user) => ({
+        rfidNumber: user.rfidNumber,
+        idNumber: user.studentNumber,
+        name: user.studentName,
+        course: user.course,
+        totalPayment: parseFloat(user.totalPayment) || 0,
+        wasCleared: user.balance_cleared_at !== null
+      }));
+
+      res.json(formatted);
+    }
+  );
+});
+
 // Get users
-app.get("/api/users", (req, res) => {
+app.get("/api/users", verifyToken, (req, res) => {
   const sql =
     "SELECT rfidNumber, studentNumber, studentName, course, totalPayment, balance_cleared_at FROM users ORDER BY id DESC";
 
@@ -243,7 +513,7 @@ app.get("/api/users", (req, res) => {
 });
 
 // Add user
-app.post("/api/users", (req, res) => {
+app.post("/api/users", verifyToken, (req, res) => {
   const { rfidNumber, idNumber, name, course } = req.body;
 
   const check = "SELECT * FROM users WHERE rfidNumber=? OR studentNumber=?";
@@ -267,7 +537,7 @@ app.post("/api/users", (req, res) => {
 });
 
 // Delete user
-app.delete("/api/users/:rfidNumber", (req, res) => {
+app.delete("/api/users/:rfidNumber", verifyToken, (req, res) => {
   db.query(
     "DELETE FROM users WHERE rfidNumber=?",
     [req.params.rfidNumber],
@@ -283,7 +553,7 @@ app.delete("/api/users/:rfidNumber", (req, res) => {
    CLEAR MULTIPLE BALANCES
 ========================= */
 
-app.post('/api/clear-balances', (req, res) => {
+app.post('/api/clear-balances', verifyToken, (req, res) => {
   const { rfids } = req.body;
 
   if (!rfids || rfids.length === 0) {
@@ -349,7 +619,7 @@ app.post('/api/clear-balances', (req, res) => {
 ========================= */
 
 // Get transaction history
-app.get("/api/transactions", (req, res) => {
+app.get("/api/transactions", verifyToken, (req, res) => {
   const sql = `
   SELECT t.id, u.studentName, t.rfid_number, t.product_name,
          t.price, t.transaction_date
